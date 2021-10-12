@@ -1,0 +1,7 @@
+click
+dill
+tensorflow==2.3.0
+google-cloud-storage
+pandas
+pillow
+sklearn

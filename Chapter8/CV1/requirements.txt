@@ -1,0 +1,13 @@
+streamlit
+black
+altair
+pandas
+pydeck
+matplotlib
+numpy
+Pillow
+bs4
+pipenv
+xlrd
+opencv-python==4.2.0.34
+gdown

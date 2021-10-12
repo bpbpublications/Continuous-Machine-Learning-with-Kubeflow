@@ -1,0 +1,23 @@
+apiVersion: serving.kubeflow.org/v1alpha2
+kind: InferenceService
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
+    autoscaling.knative.dev/target: "10"
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: <SERVING_MODEL_NAME>
+  namespace: kubeflow
+spec:
+  default:
+    predictor:
+      minReplicas: 1
+      custom:
+        container:
+          image: gcr.io/<PROJECT_ID>/brain_tumor_scan/kf_serving_braintest:v1
+          imagePullPolicy: Always
+          name: user-container
+        imagePullSecrets:
+          - name: user-gcp-sa
+
+        

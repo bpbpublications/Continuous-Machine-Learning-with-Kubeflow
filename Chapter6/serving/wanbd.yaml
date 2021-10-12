@@ -1,0 +1,17 @@
+apiVersion: serving.kubeflow.org/v1alpha2
+kind: InferenceService
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: kfserving-wandb-lightgbm-model
+  #namespace: kubeflow
+spec:
+  default:
+    predictor:
+      custom:
+        container:
+          image: gcr.io/cohesive-gadget-166410/lightgbm-serving:v1
+          imagePullPolicy: Always
+          name: user-container
+        imagePullSecrets:
+          - name: varsecretname99

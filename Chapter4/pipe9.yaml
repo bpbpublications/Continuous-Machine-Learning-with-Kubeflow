@@ -1,0 +1,915 @@
+"apiVersion": |-
+  argoproj.io/v1alpha1
+"kind": |-
+  Workflow
+"metadata":
+  "annotations":
+    "pipelines.kubeflow.org/pipeline_spec": |-
+      {"description": "Constructs a Kubeflow pipeline.\n\n      Creates Kubeflow ContainerOps for each TFX component encountered in the\n      logical pipeline definition.", "inputs": [{"default": "gs://{{kfp-default-bucket}}/tfx_taxi_simple/{{workflow.uid}}", "name": "pipeline-root"}, {"default": "gs://<BUCKET_NAME>/tfx_taxi_simple/data", "name": "data-root"}, {"default": "gs://<BUCKET_NAME>/tfx_taxi_simple/modules/taxi_utils.py", "name": "module-file"}], "name": "parameterized_tfx_oss"}
+  "generateName": |-
+    parameterized-tfx-oss-
+"spec":
+  "arguments":
+    "parameters":
+    - "name": |-
+        pipeline-root
+      "value": |-
+        gs://{{kfp-default-bucket}}/tfx_taxi_simple/{{workflow.uid}}
+    - "name": |-
+        data-root
+      "value": |-
+        gs://<BUCKET_NAME>/tfx_taxi_simple/data
+    - "name": |-
+        module-file
+      "value": |-
+        gs://<BUCKET_NAME>/tfx_taxi_simple/modules/taxi_utils.py
+  "entrypoint": |-
+    parameterized-tfx-oss
+  "serviceAccountName": |-
+    pipeline-runner
+  "templates":
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"custom_config": null, "input_config": "{\n  \"splits\": [\n    {\n      \"name\": \"single_split\",\n      \"pattern\": \"*\"\n    }\n  ]\n}", "output_config": "{\n  \"split_config\": {\n    \"splits\": [\n      {\n        \"hash_buckets\": 2,\n        \"name\": \"train\"\n      },\n      {\n        \"hash_buckets\": 1,\n        \"name\": \"eval\"\n      }\n    ]\n  }\n}"}, "_id": "CsvExampleGen", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"input_base": "input"}, "_data": {"input": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ExternalArtifact", "__class__": "ExternalArtifact", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"uri": "{{inputs.parameters.data-root}}"}, "artifact_type": {"name": "ExternalArtifact"}}], "output_key": null, "producer_component_id": null, "type": {"__class__": "ExternalArtifact", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {}, "_data": {"examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "CsvExampleGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "examples", "producer_component_id": "CsvExampleGen", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.example_gen.csv_example_gen.component.CsvExampleGen", "driver_class": {"__class__": "Driver", "__module__": "tfx.components.example_gen.driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.example_gen.csv_example_gen.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          data-root
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      csvexamplegen
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"eval_config": "{\n  \"metrics_specs\": [\n    {\n      \"metrics\": [\n        {\n          \"class_name\": \"ExampleCount\"\n        }\n      ],\n      \"thresholds\": {\n        \"binary_accuracy\": {\n          \"change_threshold\": {\n            \"absolute\": -1e-10,\n            \"direction\": \"HIGHER_IS_BETTER\"\n          },\n          \"value_threshold\": {\n            \"lower_bound\": 0.5\n          }\n        }\n      }\n    }\n  ],\n  \"model_specs\": [\n    {\n      \"signature_name\": \"eval\"\n    }\n  ],\n  \"slicing_specs\": [\n    {},\n    {\n      \"feature_keys\": [\n        \"trip_start_hour\"\n      ]\n    }\n  ]\n}", "fairness_indicator_thresholds": null, "feature_slicing_spec": null}, "_id": "Evaluator", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"model_exports": "model"}, "_data": {"examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "CsvExampleGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "examples", "producer_component_id": "CsvExampleGen", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "model": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Model", "__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "model"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Trainer"}}}, "artifact_type": {"name": "Model"}}], "output_key": "model", "producer_component_id": "Trainer", "type": {"__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"output": "evaluation"}, "_data": {"blessing": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ModelBlessing", "__class__": "ModelBlessing", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "blessing"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Evaluator"}}}, "artifact_type": {"name": "ModelBlessing"}}], "output_key": "blessing", "producer_component_id": "Evaluator", "type": {"__class__": "ModelBlessing", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "evaluation": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ModelEvaluation", "__class__": "ModelEvaluation", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "evaluation"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Evaluator"}}}, "artifact_type": {"name": "ModelEvaluation"}}], "output_key": "evaluation", "producer_component_id": "Evaluator", "type": {"__class__": "ModelEvaluation", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.evaluator.component.Evaluator", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.evaluator.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      evaluator
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {}, "_id": "ExampleValidator", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"stats": "statistics"}, "_data": {"schema": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Schema", "__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "schema"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "SchemaGen"}}}, "artifact_type": {"name": "Schema"}}], "output_key": "schema", "producer_component_id": "SchemaGen", "type": {"__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "statistics": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ExampleStatistics", "__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "statistics"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "StatisticsGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "ExampleStatistics", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "statistics", "producer_component_id": "StatisticsGen", "type": {"__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"output": "anomalies"}, "_data": {"anomalies": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ExampleAnomalies", "__class__": "ExampleAnomalies", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "anomalies"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "ExampleValidator"}}}, "artifact_type": {"name": "ExampleAnomalies", "properties": {"span": "INT"}}}], "output_key": "anomalies", "producer_component_id": "ExampleValidator", "type": {"__class__": "ExampleAnomalies", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.example_validator.component.ExampleValidator", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.example_validator.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      examplevalidator
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "dag":
+      "tasks":
+      - "arguments":
+          "parameters":
+          - "name": |-
+              data-root
+            "value": |-
+              {{inputs.parameters.data-root}}
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "name": |-
+          csvexamplegen
+        "template": |-
+          csvexamplegen
+      - "arguments":
+          "parameters":
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          csvexamplegen
+        - |-
+          trainer
+        "name": |-
+          evaluator
+        "template": |-
+          evaluator
+      - "arguments":
+          "parameters":
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          schemagen
+        - |-
+          statisticsgen
+        "name": |-
+          examplevalidator
+        "template": |-
+          examplevalidator
+      - "arguments":
+          "parameters":
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          evaluator
+        - |-
+          trainer
+        "name": |-
+          pusher
+        "template": |-
+          pusher
+      - "arguments":
+          "parameters":
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          statisticsgen
+        "name": |-
+          schemagen
+        "template": |-
+          schemagen
+      - "arguments":
+          "parameters":
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          csvexamplegen
+        "name": |-
+          statisticsgen
+        "template": |-
+          statisticsgen
+      - "arguments":
+          "parameters":
+          - "name": |-
+              module-file
+            "value": |-
+              {{inputs.parameters.module-file}}
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          schemagen
+        - |-
+          transform
+        "name": |-
+          trainer
+        "template": |-
+          trainer
+      - "arguments":
+          "parameters":
+          - "name": |-
+              module-file
+            "value": |-
+              {{inputs.parameters.module-file}}
+          - "name": |-
+              pipeline-root
+            "value": |-
+              {{inputs.parameters.pipeline-root}}
+        "dependencies":
+        - |-
+          csvexamplegen
+        - |-
+          schemagen
+        "name": |-
+          transform
+        "template": |-
+          transform
+    "inputs":
+      "parameters":
+      - "name": |-
+          data-root
+      - "name": |-
+          module-file
+      - "name": |-
+          pipeline-root
+    "name": |-
+      parameterized-tfx-oss
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"custom_config": null, "push_destination": "{\n  \"filesystem\": {\n    \"base_directory\": \"{{inputs.parameters.pipeline-root}}/model_serving\"\n  }\n}"}, "_id": "Pusher", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"model_export": "model"}, "_data": {"model": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Model", "__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "model"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Trainer"}}}, "artifact_type": {"name": "Model"}}], "output_key": "model", "producer_component_id": "Trainer", "type": {"__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "model_blessing": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ModelBlessing", "__class__": "ModelBlessing", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "blessing"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Evaluator"}}}, "artifact_type": {"name": "ModelBlessing"}}], "output_key": "blessing", "producer_component_id": "Evaluator", "type": {"__class__": "ModelBlessing", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"model_push": "pushed_model"}, "_data": {"pushed_model": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "PushedModel", "__class__": "PushedModel", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "pushed_model"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Pusher"}}}, "artifact_type": {"name": "PushedModel"}}], "output_key": "pushed_model", "producer_component_id": "Pusher", "type": {"__class__": "PushedModel", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.pusher.component.Pusher", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.pusher.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      pusher
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"infer_feature_shape": false}, "_id": "SchemaGen", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"stats": "statistics"}, "_data": {"statistics": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ExampleStatistics", "__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "statistics"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "StatisticsGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "ExampleStatistics", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "statistics", "producer_component_id": "StatisticsGen", "type": {"__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"output": "schema"}, "_data": {"schema": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Schema", "__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "schema"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "SchemaGen"}}}, "artifact_type": {"name": "Schema"}}], "output_key": "schema", "producer_component_id": "SchemaGen", "type": {"__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.schema_gen.component.SchemaGen", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.schema_gen.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      schemagen
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {}, "_id": "StatisticsGen", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"input_data": "examples"}, "_data": {"examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "CsvExampleGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "examples", "producer_component_id": "CsvExampleGen", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"output": "statistics"}, "_data": {"statistics": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "ExampleStatistics", "__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "statistics"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "StatisticsGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "ExampleStatistics", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "statistics", "producer_component_id": "StatisticsGen", "type": {"__class__": "ExampleStatistics", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.statistics_gen.component.StatisticsGen", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.statistics_gen.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      statisticsgen
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"custom_config": null, "eval_args": "{\n  \"num_steps\": 5\n}", "module_file": "{{inputs.parameters.module-file}}", "run_fn": null, "train_args": "{\n  \"num_steps\": 10\n}", "trainer_fn": null}, "_id": "Trainer", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"transform_output": "transform_graph"}, "_data": {"examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "transformed_examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Transform"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "transformed_examples", "producer_component_id": "Transform", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "schema": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Schema", "__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "schema"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "SchemaGen"}}}, "artifact_type": {"name": "Schema"}}], "output_key": "schema", "producer_component_id": "SchemaGen", "type": {"__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "transform_graph": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "TransformGraph", "__class__": "TransformGraph", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "transform_graph"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Transform"}}}, "artifact_type": {"name": "TransformGraph"}}], "output_key": "transform_graph", "producer_component_id": "Transform", "type": {"__class__": "TransformGraph", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"output": "model"}, "_data": {"model": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Model", "__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "model"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Trainer"}}}, "artifact_type": {"name": "Model"}}], "output_key": "model", "producer_component_id": "Trainer", "type": {"__class__": "Model", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.trainer.component.Trainer", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.trainer.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          module-file
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      trainer
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json
+  - "container":
+      "args":
+      - |-
+        --pipeline_name
+      - |-
+        parameterized_tfx_oss
+      - |-
+        --pipeline_root
+      - |-
+        {{inputs.parameters.pipeline-root}}
+      - |-
+        --kubeflow_metadata_config
+      - |-
+        {
+          "grpc_config": {
+            "grpc_service_host": {
+              "environment_variable": "METADATA_GRPC_SERVICE_HOST"
+            },
+            "grpc_service_port": {
+              "environment_variable": "METADATA_GRPC_SERVICE_PORT"
+            }
+          }
+        }
+      - |-
+        --beam_pipeline_args
+      - |-
+        []
+      - |-
+        --additional_pipeline_args
+      - |-
+        {}
+      - |-
+        --component_launcher_class_path
+      - |-
+        tfx.orchestration.launcher.in_process_component_launcher.InProcessComponentLauncher
+      - |-
+        --serialized_component
+      - |-
+        {"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper", "__tfx_object_type__": "jsonable", "_exec_properties": {"module_file": "{{inputs.parameters.module-file}}", "preprocessing_fn": null}, "_id": "Transform", "_inputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"input_data": "examples"}, "_data": {"examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "CsvExampleGen"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "examples", "producer_component_id": "CsvExampleGen", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "schema": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Schema", "__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "schema"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "SchemaGen"}}}, "artifact_type": {"name": "Schema"}}], "output_key": "schema", "producer_component_id": "SchemaGen", "type": {"__class__": "Schema", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_outputs": {"__class__": "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__": "jsonable", "_compat_aliases": {"transform_output": "transform_graph"}, "_data": {"transform_graph": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "TransformGraph", "__class__": "TransformGraph", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "transform_graph"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Transform"}}}, "artifact_type": {"name": "TransformGraph"}}], "output_key": "transform_graph", "producer_component_id": "Transform", "type": {"__class__": "TransformGraph", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}, "transformed_examples": {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "_artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__": "Examples", "__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "jsonable", "artifact": {"custom_properties": {"name": {"string_value": "transformed_examples"}, "pipeline_name": {"string_value": "parameterized_tfx_oss"}, "producer_component": {"string_value": "Transform"}}, "properties": {"split_names": {"string_value": "[\"train\", \"eval\"]"}}}, "artifact_type": {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}], "output_key": "transformed_examples", "producer_component_id": "Transform", "type": {"__class__": "Examples", "__module__": "tfx.types.standard_artifacts", "__tfx_object_type__": "class"}}}}, "_type": "tfx.components.transform.component.Transform", "driver_class": {"__class__": "BaseDriver", "__module__": "tfx.components.base.base_driver", "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec", "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__": "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.transform.executor", "__tfx_object_type__": "class"}}}
+      - |-
+        --component_config
+      - |-
+        null
+      - |-
+        --enable_cache
+      "command":
+      - |-
+        python
+      - |-
+        /tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py
+      "env":
+      - "name": |-
+          WORKFLOW_ID
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.labels['workflows.argoproj.io/workflow']
+      - "name": |-
+          KFP_POD_NAME
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.name
+      - "name": |-
+          KFP_NAMESPACE
+        "valueFrom":
+          "fieldRef":
+            "fieldPath": |-
+              metadata.namespace
+      "envFrom":
+      - "configMapRef":
+          "name": |-
+            metadata-grpc-configmap
+          "optional": !!bool |-
+            true
+      "image": |-
+        gcr.io/tfx-oss-public/tfx:0.22.0
+    "inputs":
+      "parameters":
+      - "name": |-
+          module-file
+      - "name": |-
+          pipeline-root
+    "metadata":
+      "labels":
+        "add-pod-env": |-
+          true
+    "name": |-
+      transform
+    "outputs":
+      "artifacts":
+      - "name": |-
+          mlpipeline-ui-metadata
+        "path": |-
+          /mlpipeline-ui-metadata.json

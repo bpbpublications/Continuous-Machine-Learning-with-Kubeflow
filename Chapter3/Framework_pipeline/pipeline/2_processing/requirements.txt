@@ -1,0 +1,13 @@
+pyyaml
+h5py 
+dill
+click
+numpy==1.16.4
+opencv-contrib-python-headless==4.2.0.34
+opencv-python==4.2.0.34
+pillow
+tqdm
+imutils
+tensorflow==2.3.0
+
+

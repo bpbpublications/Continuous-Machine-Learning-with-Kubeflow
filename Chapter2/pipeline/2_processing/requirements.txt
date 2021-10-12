@@ -1,0 +1,16 @@
+pandas
+pyyaml
+sklearn
+h5py 
+dill
+click
+plotly==4.9.0
+psutil
+kaleido==0.0.3.post1
+tensorflow==2.0.0
+numpy
+google-api-python-client
+google-cloud-storage
+fsspec
+ipython
+gcsfs

@@ -1,0 +1,17 @@
+apiVersion: serving.kubeflow.org/v1alpha2
+kind: InferenceService
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
+  name: kfserving-breast-model
+  namespace: kubeflow
+spec:
+  default:
+    predictor:
+      custom:
+        container:
+           image: gcr.io/<PROJECT>/breast_cancer/<IMAGENAME>:v1
+           imagePullPolicy: Always
+           name: user-container
+        imagePullSecrets:
+          - name: user-gcp-sa

@@ -1,0 +1,367 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: breast-cancer-pipeline-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.4, pipelines.kubeflow.org/pipeline_compilation_time: '2020-11-22T20:25:32.740344',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "End to End pipeline for
+      Tensorflow Breast Cancer", "inputs": [{"default": "gcr.io/<$PROJECT_ID>/breast_cancer/step1_loadingdata:v1",
+      "name": "dataextraction_step_image", "optional": true}, {"default": "gcr.io/<$PROJECT_ID>/breast_cancer/step2_dataprocessing:v1",
+      "name": "dataprocessing_step_image", "optional": true}, {"default": "gcr.io/<$PROJECT_ID>/breast_cancer/step3_training_model:v1",
+      "name": "trainmodel_step_image", "optional": true}, {"default": "gcr.io/<$PROJECT_ID>/breast_cancer/step4_evaluation_model:v1",
+      "name": "evaluator_step_image", "optional": true}, {"default": "/mnt/training.data",
+      "name": "train_file", "optional": true}, {"default": "/mnt/breast.data", "name":
+      "data_file", "optional": true}, {"default": "/mnt/test.data", "name": "test_file",
+      "optional": true}, {"default": "/mnt/validation.data", "name": "validation_file",
+      "optional": true}, {"default": "0.2", "name": "split_size", "optional": true},
+      {"default": "/mnt/trainingtarget.data", "name": "train_target", "optional":
+      true}, {"default": "/mnt/testtarget.data", "name": "test_target", "optional":
+      true}, {"default": "/mnt/validationtarget.data", "name": "validation_target",
+      "optional": true}, {"default": "5", "name": "epochs", "optional": true}, {"default":
+      "0.001", "name": "learning_rate", "optional": true}, {"default": "64", "name":
+      "batch_size", "optional": true}, {"default": "1000", "name": "shuffle_size",
+      "optional": true}, {"default": "/mnt/logs/", "name": "tensorboard_logs", "optional":
+      true}, {"default": "gs://<$BUCKET>/breast/logs", "name": "tensorboard_gcs_logs",
+      "optional": true}, {"default": "/mnt/saved_model", "name": "model_output_base_path",
+      "optional": true}, {"default": "gs://<$BUCKET>/breast/model", "name": "gcs_path",
+      "optional": true}, {"default": "gs://<$BUCKET>/breast", "name": "gcs_path_confusion",
+      "optional": true}, {"default": "gcs", "name": "mode", "optional": true}, {"default":
+      "0.5", "name": "probability", "optional": true}, {"default": "kfserving-breast-model",
+      "name": "serving_name", "optional": true}, {"default": "kubeflow", "name": "serving_namespace",
+      "optional": true}, {"default": "gcr.io/<$PROJECT_ID>/breast_cancer/custom_serving_breastcancer:v1",
+      "name": "image", "optional": true}, {"default": "gs://kubeflowusecases/breast/data.csv",
+      "name": "bucket_data", "optional": true}, {"default": "gs://kubeflowusecases",
+      "name": "bucket_name", "optional": true}, {"default": "breast/visualize", "name":
+      "commit_sha", "optional": true}, {"default": "/mnt/correlation.png", "name":
+      "metrics_plot", "optional": true}], "name": "breast cancer pipeline"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.4}
+spec:
+  entrypoint: breast-cancer-pipeline
+  templates:
+  - name: breast-cancer-pipeline
+    inputs:
+      parameters:
+      - {name: batch_size}
+      - {name: bucket_data}
+      - {name: bucket_name}
+      - {name: commit_sha}
+      - {name: data_file}
+      - {name: dataextraction_step_image}
+      - {name: dataprocessing_step_image}
+      - {name: epochs}
+      - {name: evaluator_step_image}
+      - {name: gcs_path}
+      - {name: gcs_path_confusion}
+      - {name: image}
+      - {name: learning_rate}
+      - {name: metrics_plot}
+      - {name: mode}
+      - {name: model_output_base_path}
+      - {name: probability}
+      - {name: serving_name}
+      - {name: serving_namespace}
+      - {name: split_size}
+      - {name: tensorboard_gcs_logs}
+      - {name: tensorboard_logs}
+      - {name: test_file}
+      - {name: test_target}
+      - {name: train_file}
+      - {name: train_target}
+      - {name: trainmodel_step_image}
+      - {name: validation_file}
+      - {name: validation_target}
+    dag:
+      tasks:
+      - name: data-extraction
+        template: data-extraction
+        dependencies: [my-pvc]
+        arguments:
+          parameters:
+          - {name: data_file, value: '{{inputs.parameters.data_file}}'}
+          - {name: dataextraction_step_image, value: '{{inputs.parameters.dataextraction_step_image}}'}
+          - {name: my-pvc-name, value: '{{tasks.my-pvc.outputs.parameters.my-pvc-name}}'}
+      - name: data-processing
+        template: data-processing
+        dependencies: [data-extraction, my-pvc]
+        arguments:
+          parameters:
+          - {name: bucket_data, value: '{{inputs.parameters.bucket_data}}'}
+          - {name: bucket_name, value: '{{inputs.parameters.bucket_name}}'}
+          - {name: commit_sha, value: '{{inputs.parameters.commit_sha}}'}
+          - {name: data_file, value: '{{inputs.parameters.data_file}}'}
+          - {name: dataprocessing_step_image, value: '{{inputs.parameters.dataprocessing_step_image}}'}
+          - {name: metrics_plot, value: '{{inputs.parameters.metrics_plot}}'}
+          - {name: my-pvc-name, value: '{{tasks.my-pvc.outputs.parameters.my-pvc-name}}'}
+          - {name: split_size, value: '{{inputs.parameters.split_size}}'}
+          - {name: test_file, value: '{{inputs.parameters.test_file}}'}
+          - {name: test_target, value: '{{inputs.parameters.test_target}}'}
+          - {name: train_file, value: '{{inputs.parameters.train_file}}'}
+          - {name: train_target, value: '{{inputs.parameters.train_target}}'}
+          - {name: validation_file, value: '{{inputs.parameters.validation_file}}'}
+          - {name: validation_target, value: '{{inputs.parameters.validation_target}}'}
+      - name: evaluation-model
+        template: evaluation-model
+        dependencies: [my-pvc, train-model]
+        arguments:
+          parameters:
+          - {name: evaluator_step_image, value: '{{inputs.parameters.evaluator_step_image}}'}
+          - {name: gcs_path, value: '{{inputs.parameters.gcs_path}}'}
+          - {name: gcs_path_confusion, value: '{{inputs.parameters.gcs_path_confusion}}'}
+          - {name: model_output_base_path, value: '{{inputs.parameters.model_output_base_path}}'}
+          - {name: my-pvc-name, value: '{{tasks.my-pvc.outputs.parameters.my-pvc-name}}'}
+          - {name: probability, value: '{{inputs.parameters.probability}}'}
+          - {name: test_file, value: '{{inputs.parameters.test_file}}'}
+          - {name: test_target, value: '{{inputs.parameters.test_target}}'}
+      - {name: my-pvc, template: my-pvc}
+      - name: serve
+        template: serve
+        dependencies: [evaluation-model]
+        arguments:
+          parameters:
+          - {name: image, value: '{{inputs.parameters.image}}'}
+          - {name: serving_name, value: '{{inputs.parameters.serving_name}}'}
+          - {name: serving_namespace, value: '{{inputs.parameters.serving_namespace}}'}
+      - name: train-model
+        template: train-model
+        dependencies: [data-processing, my-pvc]
+        arguments:
+          parameters:
+          - {name: batch_size, value: '{{inputs.parameters.batch_size}}'}
+          - {name: epochs, value: '{{inputs.parameters.epochs}}'}
+          - {name: gcs_path, value: '{{inputs.parameters.gcs_path}}'}
+          - {name: learning_rate, value: '{{inputs.parameters.learning_rate}}'}
+          - {name: mode, value: '{{inputs.parameters.mode}}'}
+          - {name: model_output_base_path, value: '{{inputs.parameters.model_output_base_path}}'}
+          - {name: my-pvc-name, value: '{{tasks.my-pvc.outputs.parameters.my-pvc-name}}'}
+          - {name: tensorboard_gcs_logs, value: '{{inputs.parameters.tensorboard_gcs_logs}}'}
+          - {name: tensorboard_logs, value: '{{inputs.parameters.tensorboard_logs}}'}
+          - {name: test_file, value: '{{inputs.parameters.test_file}}'}
+          - {name: test_target, value: '{{inputs.parameters.test_target}}'}
+          - {name: train_file, value: '{{inputs.parameters.train_file}}'}
+          - {name: train_target, value: '{{inputs.parameters.train_target}}'}
+          - {name: trainmodel_step_image, value: '{{inputs.parameters.trainmodel_step_image}}'}
+          - {name: validation_file, value: '{{inputs.parameters.validation_file}}'}
+          - {name: validation_target, value: '{{inputs.parameters.validation_target}}'}
+  - name: data-extraction
+    container:
+      args: [/app/dataextract.py, --data-file, '{{inputs.parameters.data_file}}']
+      command: [python]
+      env:
+      - {name: GOOGLE_APPLICATION_CREDENTIALS, value: /secret/gcp-credentials/user-gcp-sa.json}
+      - {name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE, value: /secret/gcp-credentials/user-gcp-sa.json}
+      image: '{{inputs.parameters.dataextraction_step_image}}'
+      volumeMounts:
+      - {mountPath: /mnt, name: my-pvc}
+      - {mountPath: /secret/gcp-credentials, name: gcp-credentials-user-gcp-sa}
+    inputs:
+      parameters:
+      - {name: data_file}
+      - {name: dataextraction_step_image}
+      - {name: my-pvc-name}
+    volumes:
+    - name: gcp-credentials-user-gcp-sa
+      secret: {secretName: user-gcp-sa}
+    - name: my-pvc
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.my-pvc-name}}'}
+  - name: data-processing
+    container:
+      args: [/app/preprocessing.py, --train-file, '{{inputs.parameters.train_file}}',
+        --test-file, '{{inputs.parameters.test_file}}', --validation-file, '{{inputs.parameters.validation_file}}',
+        --data-file, '{{inputs.parameters.data_file}}', --split-size, '{{inputs.parameters.split_size}}',
+        --train-target, '{{inputs.parameters.train_target}}', --test-target, '{{inputs.parameters.test_target}}',
+        --validation-target, '{{inputs.parameters.validation_target}}', --bucket-data,
+        '{{inputs.parameters.bucket_data}}', --bucket-name, '{{inputs.parameters.bucket_name}}',
+        --commit-sha, '{{inputs.parameters.commit_sha}}', --metrics-plot, '{{inputs.parameters.metrics_plot}}']
+      command: [python]
+      env:
+      - {name: GOOGLE_APPLICATION_CREDENTIALS, value: /secret/gcp-credentials/user-gcp-sa.json}
+      - {name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE, value: /secret/gcp-credentials/user-gcp-sa.json}
+      image: '{{inputs.parameters.dataprocessing_step_image}}'
+      volumeMounts:
+      - {mountPath: /mnt, name: my-pvc}
+      - {mountPath: /secret/gcp-credentials, name: gcp-credentials-user-gcp-sa}
+    inputs:
+      parameters:
+      - {name: bucket_data}
+      - {name: bucket_name}
+      - {name: commit_sha}
+      - {name: data_file}
+      - {name: dataprocessing_step_image}
+      - {name: metrics_plot}
+      - {name: my-pvc-name}
+      - {name: split_size}
+      - {name: test_file}
+      - {name: test_target}
+      - {name: train_file}
+      - {name: train_target}
+      - {name: validation_file}
+      - {name: validation_target}
+    outputs:
+      artifacts:
+      - {name: mlpipeline-ui-metadata, path: /mlpipeline-ui-metadata.json}
+    volumes:
+    - name: gcp-credentials-user-gcp-sa
+      secret: {secretName: user-gcp-sa}
+    - name: my-pvc
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.my-pvc-name}}'}
+  - name: evaluation-model
+    container:
+      args: [/app/evaluator.py, --test-file, '{{inputs.parameters.test_file}}', --test-target,
+        '{{inputs.parameters.test_target}}', --probability, '{{inputs.parameters.probability}}',
+        --model-output-base-path, '{{inputs.parameters.model_output_base_path}}',
+        --gcs-path, '{{inputs.parameters.gcs_path}}', --gcs-path-confusion, '{{inputs.parameters.gcs_path_confusion}}']
+      command: [python]
+      env:
+      - {name: GOOGLE_APPLICATION_CREDENTIALS, value: /secret/gcp-credentials/user-gcp-sa.json}
+      - {name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE, value: /secret/gcp-credentials/user-gcp-sa.json}
+      image: '{{inputs.parameters.evaluator_step_image}}'
+      volumeMounts:
+      - {mountPath: /mnt, name: my-pvc}
+      - {mountPath: /secret/gcp-credentials, name: gcp-credentials-user-gcp-sa}
+    inputs:
+      parameters:
+      - {name: evaluator_step_image}
+      - {name: gcs_path}
+      - {name: gcs_path_confusion}
+      - {name: model_output_base_path}
+      - {name: my-pvc-name}
+      - {name: probability}
+      - {name: test_file}
+      - {name: test_target}
+    outputs:
+      artifacts:
+      - {name: mlpipeline-metrics, path: /mlpipeline-metrics.json}
+      - {name: mlpipeline-ui-metadata, path: /mlpipeline-ui-metadata.json}
+    volumes:
+    - name: gcp-credentials-user-gcp-sa
+      secret: {secretName: user-gcp-sa}
+    - name: my-pvc
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.my-pvc-name}}'}
+  - name: my-pvc
+    resource:
+      action: create
+      manifest: |
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: '{{workflow.name}}-my-pvc'
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    outputs:
+      parameters:
+      - name: my-pvc-manifest
+        valueFrom: {jsonPath: '{}'}
+      - name: my-pvc-name
+        valueFrom: {jsonPath: '{.metadata.name}'}
+      - name: my-pvc-size
+        valueFrom: {jsonPath: '{.status.capacity.storage}'}
+  - name: serve
+    resource:
+      action: apply
+      successCondition: status.url
+      manifest: |
+        apiVersion: serving.kubeflow.org/v1alpha2
+        kind: InferenceService
+        metadata:
+          labels:
+            controller-tools.k8s.io: '1.0'
+          name: '{{inputs.parameters.serving_name}}'
+          namespace: '{{inputs.parameters.serving_namespace}}'
+        spec:
+          default:
+            predictor:
+              custom:
+                container:
+                  image: '{{inputs.parameters.image}}'
+    inputs:
+      parameters:
+      - {name: image}
+      - {name: serving_name}
+      - {name: serving_namespace}
+    outputs:
+      parameters:
+      - name: serve-manifest
+        valueFrom: {jsonPath: '{}'}
+      - name: serve-name
+        valueFrom: {jsonPath: '{.metadata.name}'}
+  - name: train-model
+    container:
+      args: [/app/train.py, --train-file, '{{inputs.parameters.train_file}}', --test-file,
+        '{{inputs.parameters.test_file}}', --validation-file, '{{inputs.parameters.validation_file}}',
+        --train-target, '{{inputs.parameters.train_target}}', --test-target, '{{inputs.parameters.test_target}}',
+        --validation-target, '{{inputs.parameters.validation_target}}', --epochs,
+        '{{inputs.parameters.epochs}}', --batch-size, '{{inputs.parameters.batch_size}}',
+        --learning-rate, '{{inputs.parameters.learning_rate}}', --tensorboard-logs,
+        '{{inputs.parameters.tensorboard_logs}}', --tensorboard-gcs-logs, '{{inputs.parameters.tensorboard_gcs_logs}}',
+        --model-output-base-path, '{{inputs.parameters.model_output_base_path}}',
+        --gcs-path, '{{inputs.parameters.gcs_path}}', --mode, '{{inputs.parameters.mode}}']
+      command: [python]
+      env:
+      - {name: GOOGLE_APPLICATION_CREDENTIALS, value: /secret/gcp-credentials/user-gcp-sa.json}
+      - {name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE, value: /secret/gcp-credentials/user-gcp-sa.json}
+      image: '{{inputs.parameters.trainmodel_step_image}}'
+      volumeMounts:
+      - {mountPath: /mnt, name: my-pvc}
+      - {mountPath: /secret/gcp-credentials, name: gcp-credentials-user-gcp-sa}
+    inputs:
+      parameters:
+      - {name: batch_size}
+      - {name: epochs}
+      - {name: gcs_path}
+      - {name: learning_rate}
+      - {name: mode}
+      - {name: model_output_base_path}
+      - {name: my-pvc-name}
+      - {name: tensorboard_gcs_logs}
+      - {name: tensorboard_logs}
+      - {name: test_file}
+      - {name: test_target}
+      - {name: train_file}
+      - {name: train_target}
+      - {name: trainmodel_step_image}
+      - {name: validation_file}
+      - {name: validation_target}
+    outputs:
+      artifacts:
+      - {name: mlpipeline-ui-metadata, path: /mlpipeline-ui-metadata.json}
+    volumes:
+    - name: gcp-credentials-user-gcp-sa
+      secret: {secretName: user-gcp-sa}
+    - name: my-pvc
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.my-pvc-name}}'}
+  arguments:
+    parameters:
+    - {name: dataextraction_step_image, value: 'gcr.io/<$PROJECT_ID>/breast_cancer/step1_loadingdata:v1'}
+    - {name: dataprocessing_step_image, value: 'gcr.io/<$PROJECT_ID>/breast_cancer/step2_dataprocessing:v1'}
+    - {name: trainmodel_step_image, value: 'gcr.io/<$PROJECT_ID>/breast_cancer/step3_training_model:v1'}
+    - {name: evaluator_step_image, value: 'gcr.io/<$PROJECT_ID>/breast_cancer/step4_evaluation_model:v1'}
+    - {name: train_file, value: /mnt/training.data}
+    - {name: data_file, value: /mnt/breast.data}
+    - {name: test_file, value: /mnt/test.data}
+    - {name: validation_file, value: /mnt/validation.data}
+    - {name: split_size, value: '0.2'}
+    - {name: train_target, value: /mnt/trainingtarget.data}
+    - {name: test_target, value: /mnt/testtarget.data}
+    - {name: validation_target, value: /mnt/validationtarget.data}
+    - {name: epochs, value: '5'}
+    - {name: learning_rate, value: '0.001'}
+    - {name: batch_size, value: '64'}
+    - {name: shuffle_size, value: '1000'}
+    - {name: tensorboard_logs, value: /mnt/logs/}
+    - {name: tensorboard_gcs_logs, value: 'gs://<$BUCKET>/breast/logs'}
+    - {name: model_output_base_path, value: /mnt/saved_model}
+    - {name: gcs_path, value: 'gs://<$BUCKET>/breast/model'}
+    - {name: gcs_path_confusion, value: 'gs://<$BUCKET>/breast'}
+    - {name: mode, value: gcs}
+    - {name: probability, value: '0.5'}
+    - {name: serving_name, value: kfserving-breast-model}
+    - {name: serving_namespace, value: kubeflow}
+    - {name: image, value: 'gcr.io/<$PROJECT_ID>/breast_cancer/custom_serving_breastcancer:v1'}
+    - {name: bucket_data, value: 'gs://kubeflowusecases/breast/data.csv'}
+    - {name: bucket_name, value: 'gs://kubeflowusecases'}
+    - {name: commit_sha, value: breast/visualize}
+    - {name: metrics_plot, value: /mnt/correlation.png}
+  serviceAccountName: pipeline-runner
